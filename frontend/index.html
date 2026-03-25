@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Task Manager</title>
+</head>
+<body>
+
+<h2>Task Manager</h2>
+
+<input id="title" placeholder="Enter task" />
+<button onclick="addTask()">Add</button>
+
+<ul id="list"></ul>
+
+<script>
+const BASE_URL = "https://connecting-74sh.onrender.com";
+
+// 🔹 Load all tasks
+async function loadTasks() {
+  const list = document.getElementById("list");
+  list.innerHTML = "Loading...";
+
+  try {
+    const res = await fetch(`${BASE_URL}/tasks`);
+    const tasks = await res.json();
+
+    list.innerHTML = "";
+
+    if (tasks.length === 0) {
+      list.innerHTML = "No tasks yet";
+      return;
+    }
+
+    tasks.forEach(task => {
+      const li = document.createElement("li");
+
+      li.innerHTML = `
+        ${task.title} 
+        ${task.completed ? "✅" : ""}
+        <button onclick="deleteTask(${task.id})">Delete</button>
+        <button onclick="toggleTask(${task.id}, ${task.completed})">
+          ${task.completed ? "Undo" : "Done"}
+        </button>
+      `;
+
+      list.appendChild(li);
+    });
+
+  } catch (err) {
+    console.error(err);
+    list.innerHTML = "Error loading tasks";
+  }
+}
+
+// 🔹 Add new task
+async function addTask() {
+  const input = document.getElementById("title");
+  const title = input.value.trim();
+
+  if (!title) {
+    alert("Enter a task!");
+    return;
+  }
+
+  try {
+    await fetch(`${BASE_URL}/tasks`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        title,
+        completed: false
+      })
+    });
+
+    input.value = "";
+    loadTasks();
+
+  } catch (err) {
+    console.error(err);
+    alert("Error adding task");
+  }
+}
+
+// 🔹 Delete task
+async function deleteTask(id) {
+  try {
+    await fetch(`${BASE_URL}/tasks/${id}`, {
+      method: "DELETE"
+    });
+
+    loadTasks();
+
+  } catch (err) {
+    console.error(err);
+    alert("Error deleting task");
+  }
+}
+
+// 🔹 Toggle complete
+async function toggleTask(id, completed) {
+  try {
+    await fetch(`${BASE_URL}/tasks/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        completed: !completed
+      })
+    });
+
+    loadTasks();
+
+  } catch (err) {
+    console.error(err);
+    alert("Error updating task");
+  }
+}
+
+// 🔥 Load tasks when page opens
+loadTasks();
+</script>
+
+</body>
+</html>
